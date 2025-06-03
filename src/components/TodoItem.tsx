@@ -4,6 +4,7 @@ import type { Data, Category } from "../types";
 interface TodoItemProps {
     todo: Data;
     onToggleCompletion: (id: string) => void;
+    onDelete?: (id: string) => void;
 }
 
 function getCategoryColor(category: Category): string {
@@ -50,7 +51,7 @@ function getCategoryBgColor(category: Category): string {
     return colors[category];
 }
 
-export default function TodoItem({ todo, onToggleCompletion }: TodoItemProps) {
+export default function TodoItem({ todo, onToggleCompletion, onDelete }: TodoItemProps) {
     return (
         <div className="rounded-2xl bg-todo-bg p-5 shadow-card transition-shadow hover:shadow-medium">
             <div className="flex justify-between">
@@ -90,6 +91,15 @@ export default function TodoItem({ todo, onToggleCompletion }: TodoItemProps) {
                 </div>
                 <div className="flex items-center gap-2">
                     {todo.dueTime && <span className="text-xs text-gray-400">{todo.dueTime}</span>}
+                    {onDelete && (
+                        <button
+                            onClick={() => onDelete(todo.id)}
+                            className="rounded px-2 py-1 text-sm text-red-400 transition-colors hover:text-red-600"
+                            title="Delete task"
+                        >
+                            ✕
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

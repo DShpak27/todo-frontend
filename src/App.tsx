@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { nanoid } from "nanoid";
 import { FiCalendar } from "react-icons/fi";
 
 import type { Data, FilterType } from "./types";
@@ -7,49 +6,7 @@ import FilterButton from "./components/FilterButton";
 import AddTaskModal from "./components/AddTaskModal";
 import TodoItem from "./components/TodoItem";
 import SearchBar from "./components/SearchBar";
-
-const data: Data[] = [
-    {
-        id: "1",
-        isCompleted: false,
-        text: "Project daily stand-up",
-        priority: "medium",
-        category: "meeting",
-        dueDate: new Date("2025-06-03"),
-        dueTime: "09:30",
-        isRecurring: true,
-    },
-    {
-        id: "2",
-        isCompleted: false,
-        text: "Interna new UI style",
-        priority: "high",
-        category: "design",
-        dueDate: new Date("2025-06-03"),
-        dueTime: "11:30",
-        isRecurring: false,
-    },
-    {
-        id: "3",
-        isCompleted: false,
-        text: "Weekly Review",
-        priority: "low",
-        category: "review",
-        dueDate: new Date("2025-06-03"),
-        dueTime: "10:30",
-        isRecurring: true,
-    },
-    {
-        id: "4",
-        isCompleted: false,
-        text: "Interview",
-        priority: "high",
-        category: "meeting",
-        dueDate: new Date("2025-06-04"),
-        dueTime: "16:30",
-        isRecurring: false,
-    },
-];
+import { todoApi, type CreateTaskRequest } from "./api/todoApi";
 
 function App() {
     const [todos, setTodos] = useState<Data[]>([]);
@@ -57,22 +14,39 @@ function App() {
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
     const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+    // const [isLoading, setIsLoading] = useState<boolean>(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const addTodo = (taskData: Partial<Data>) => {
-        if (taskData.text?.trim()) {
-            const task: Data = {
-                id: nanoid(),
-                isCompleted: false,
+    const loadTodos = async () => {
+        try {
+            // setIsLoading(true);
+            const tasks = await todoApi.getAllTasks();
+            setTodos(tasks);
+        } catch (error) {
+            console.error("Failed to load todos:", error);
+        } finally {
+            // setIsLoading(false);
+        }
+    };
+
+    const addTodo = async (taskData: Partial<Data>) => {
+        if (!taskData.text?.trim()) return;
+
+        try {
+            const createTaskData: CreateTaskRequest = {
                 text: taskData.text,
                 priority: taskData.priority || "medium",
                 category: taskData.category || "meeting",
-                dueDate: taskData.dueDate,
+                dueDate: taskData.dueDate ? taskData.dueDate.toISOString().split("T")[0] : undefined,
                 dueTime: taskData.dueTime,
                 isRecurring: taskData.isRecurring || false,
             };
-            setTodos(prev => [...prev, task]);
+
+            const newTask = await todoApi.createTask(createTaskData);
+            setTodos(prev => [...prev, newTask]);
             setShowAddModal(false);
+        } catch (error) {
+            console.error("Failed to create todo:", error);
         }
     };
 
@@ -88,8 +62,26 @@ function App() {
         setActiveFilter(prev => (prev === filter ? "all" : filter));
     };
 
-    const toggleTodoCompletion = (id: string) => {
-        setTodos(prev => prev.map(todo => (todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo)));
+    const toggleTodoCompletion = async (id: string) => {
+        try {
+            const updatedTask = await todoApi.toggleTaskCompletion(id);
+            if (updatedTask) {
+                setTodos(prev => prev.map(todo => (todo.id === id ? updatedTask : todo)));
+            }
+        } catch (error) {
+            console.error("Failed to toggle todo completion:", error);
+        }
+    };
+
+    const deleteTodo = async (id: string) => {
+        try {
+            const success = await todoApi.deleteTask(id);
+            if (success) {
+                setTodos(prev => prev.filter(todo => todo.id !== id));
+            }
+        } catch (error) {
+            console.error("Failed to delete todo:", error);
+        }
     };
 
     const undoneTodos = todos.filter(todo => !todo.isCompleted);
@@ -113,7 +105,7 @@ function App() {
     });
 
     useEffect(() => {
-        setTodos(data);
+        loadTodos();
     }, []);
 
     return (
@@ -172,7 +164,12 @@ function App() {
                             <p className="py-8 text-center text-gray-500">Nothing found for "{searchQuery}"</p>
                         ) : (
                             filteredTodos.map(todo => (
-                                <TodoItem key={todo.id} todo={todo} onToggleCompletion={toggleTodoCompletion} />
+                                <TodoItem
+                                    key={todo.id}
+                                    todo={todo}
+                                    onToggleCompletion={toggleTodoCompletion}
+                                    onDelete={deleteTodo}
+                                />
                             ))
                         )}
                     </div>

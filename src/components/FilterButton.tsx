@@ -1,6 +1,5 @@
 import clsx from "clsx";
-
-type FilterType = "all" | "undone" | "meeting" | "consummation";
+import type { FilterType } from "../types";
 
 interface FilterButtonProps {
     filter: FilterType;
@@ -15,26 +14,24 @@ export default function FilterButton({ filter, label, activeFilter, count, badge
     const isActive = activeFilter === filter;
 
     const badgeColors = {
-        red: clsx("bg-red-500 text-white", isActive ? "animate-pulse bg-red-400 shadow-lg" : "shadow-md"),
-        green: clsx("bg-green-500 text-white", isActive ? "animate-pulse bg-green-400 shadow-lg" : "shadow-md"),
-        purple: clsx("bg-purple-500 text-white", isActive ? "animate-pulse bg-purple-400 shadow-lg" : "shadow-md"),
+        red: "bg-red-500 text-white",
+        green: "bg-green-500 text-white",
+        purple: "bg-purple-500 text-white",
     };
 
     return (
         <button
             onClick={() => onClick(filter)}
             className={clsx(
-                "relative transform rounded-3xl px-5 py-3 text-sm font-semibold transition-all duration-300",
-                isActive
-                    ? "ring-opacity-50 scale-105 bg-blue-500 text-white shadow-lg ring-2 ring-blue-300"
-                    : "bg-blue-50 text-blue-700 hover:scale-102 hover:bg-blue-100 hover:shadow-md",
+                "relative transform rounded-3xl px-5 py-2 text-2xs font-medium tracking-wide transition-all duration-200 hover:cursor-pointer hover:shadow-sm",
+                isActive ? "bg-powder-blue text-sky-blue shadow-sm" : "bg-blue-50/70 text-gray-600",
             )}
         >
             {label}
             {count > 0 && (
                 <div
                     className={clsx(
-                        "absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
+                        "absolute top-1 right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full text-4xs",
                         badgeColors[badgeColor],
                     )}
                 >
